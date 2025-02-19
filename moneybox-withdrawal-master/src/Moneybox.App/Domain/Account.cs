@@ -4,6 +4,9 @@ namespace Moneybox.App
 {
     public class Account
     {
+        private const decimal PayInLimit = 4000m;
+
+        private const decimal NotificationThreshold = 500m;
         public Guid Id { get; set; }
 
         public User User { get; set; }
@@ -13,11 +16,7 @@ namespace Moneybox.App
         public decimal Withdrawn { get; set; }
 
         public decimal PaidIn { get; set; }
-     
-        private const decimal PayInLimit = 4000m;
-
-        private const decimal NotificationThreshold = 500m;
-
+        
         /// <summary>
         /// This method is responsible for updating balances and withdrawn based on amount
         /// </summary>
