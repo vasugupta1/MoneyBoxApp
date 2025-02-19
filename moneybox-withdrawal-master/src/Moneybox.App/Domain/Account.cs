@@ -8,11 +8,11 @@ namespace Moneybox.App
 
         public User User { get; set; }
 
-        public decimal Balance { get; private set; }
+        public decimal Balance { get; set; }
 
-        public decimal Withdrawn { get; private set; }
+        public decimal Withdrawn { get; set; }
 
-        public decimal PaidIn { get; private set; }
+        public decimal PaidIn { get; set; }
      
         private const decimal PayInLimit = 4000m;
 
