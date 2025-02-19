@@ -6,19 +6,19 @@ namespace Moneybox.App.Features
 {
     public class TransferMoney
     {
-        private IAccountRepository accountRepository;
-        private INotificationService notificationService;
+        private readonly IAccountRepository _accountRepository;
+        private readonly INotificationService _notificationService;
 
         public TransferMoney(IAccountRepository accountRepository, INotificationService notificationService)
         {
-            this.accountRepository = accountRepository;
-            this.notificationService = notificationService;
+            _accountRepository = accountRepository ?? throw new ArgumentNullException(nameof(accountRepository));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         }
 
         public void Execute(Guid fromAccountId, Guid toAccountId, decimal amount)
         {
-            var from = this.accountRepository.GetAccountById(fromAccountId);
-            var to = this.accountRepository.GetAccountById(toAccountId);
+            var from = _accountRepository.GetAccountById(fromAccountId);
+            var to = _accountRepository.GetAccountById(toAccountId);
 
             var fromBalance = from.Balance - amount;
             if (fromBalance < 0m)
@@ -28,7 +28,7 @@ namespace Moneybox.App.Features
 
             if (fromBalance < 500m)
             {
-                this.notificationService.NotifyFundsLow(from.User.Email);
+                _notificationService.NotifyFundsLow(from.User.Email);
             }
 
             var paidIn = to.PaidIn + amount;
@@ -39,7 +39,7 @@ namespace Moneybox.App.Features
 
             if (Account.PayInLimit - paidIn < 500m)
             {
-                this.notificationService.NotifyApproachingPayInLimit(to.User.Email);
+                _notificationService.NotifyApproachingPayInLimit(to.User.Email);
             }
 
             from.Balance = from.Balance - amount;
@@ -48,8 +48,8 @@ namespace Moneybox.App.Features
             to.Balance = to.Balance + amount;
             to.PaidIn = to.PaidIn + amount;
 
-            this.accountRepository.Update(from);
-            this.accountRepository.Update(to);
+            _accountRepository.Update(from);
+            _accountRepository.Update(to);
         }
     }
 }

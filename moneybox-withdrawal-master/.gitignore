@@ -204,3 +204,5 @@ FakesAssemblies/
 
 # Generated typescript files
 *.ts
+
+*.idea/
