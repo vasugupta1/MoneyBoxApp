@@ -1,5 +1,16 @@
 # Moneybox Money Withdrawal
 
+## Packages Used
+1. Shoudly
+2. Moq
+
+## Build 
+To build this project please run "dotnet clean && dotnet restore && dotnet build"
+
+## Test
+This project has a test project which uses Xunit, the folder structure is the same as the MoneyBox.App with tests for class's which have been refactored or edited
+Please run "dotnet test"
+
 The solution contains a .NET core library (Moneybox.App) which is structured into the following 3 folders:
 
 * Domain - this contains the domain models for a user and an account, and a notification service.
