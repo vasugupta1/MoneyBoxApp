@@ -17,37 +17,23 @@ namespace Moneybox.App.Features
 
         public void Execute(Guid fromAccountId, Guid toAccountId, decimal amount)
         {
-            var from = _accountRepository.GetAccountById(fromAccountId);
-            var to = _accountRepository.GetAccountById(toAccountId);
+            var from = _accountRepository.GetAccountById(fromAccountId) 
+                       ?? throw new ArgumentNullException(nameof(fromAccountId),"from account not found");
+            var to = _accountRepository.GetAccountById(toAccountId) 
+                     ?? throw new ArgumentNullException(nameof(toAccountId), "to account not found");
 
-            var fromBalance = from.Balance - amount;
-            if (fromBalance < 0m)
-            {
-                throw new InvalidOperationException("Insufficient funds to make transfer");
-            }
-
-            if (fromBalance < 500m)
+            var isLowBalance = from.HandleWithdraw(amount);
+            if (isLowBalance)
             {
                 _notificationService.NotifyFundsLow(from.User.Email);
             }
 
-            var paidIn = to.PaidIn + amount;
-            if (paidIn > Account.PayInLimit)
-            {
-                throw new InvalidOperationException("Account pay in limit reached");
-            }
-
-            if (Account.PayInLimit - paidIn < 500m)
+            var approachingPayInLimit = to.HandleDeposit(amount);
+            if (approachingPayInLimit)
             {
                 _notificationService.NotifyApproachingPayInLimit(to.User.Email);
             }
-
-            from.Balance = from.Balance - amount;
-            from.Withdrawn = from.Withdrawn - amount;
-
-            to.Balance = to.Balance + amount;
-            to.PaidIn = to.PaidIn + amount;
-
+            
             _accountRepository.Update(from);
             _accountRepository.Update(to);
         }
