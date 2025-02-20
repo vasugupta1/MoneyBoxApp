@@ -2,6 +2,7 @@ using Moq;
 using Moneybox.App.DataAccess;
 using Moneybox.App.Domain.Services;
 using Moneybox.App.Features;
+using Moneybox.App.Tests.Generator;
 using Shouldly;
 using Xunit;
 
@@ -21,17 +22,26 @@ namespace Moneybox.App.Tests
         [Fact]
         public void GivenValidAccounts_WhenExecuteIsCalled_ThenNoNotificationIsCalled()
         {
-            var fromAccount = new Account { Id = Guid.NewGuid(), Balance = 1000m, PaidIn = 0m };
-            var toAccount = new Account { Id = Guid.NewGuid(), Balance = 500m, PaidIn = 2000m };
+            var fromAccountBalance = 1000m;
+            var fromAccountPaidIn = 0m;
+            var fromAccountWithdrawn = 0m;
+
+            var toAccountBalance = 500m;
+            var toAccountPaidIn = 2000m;
+            var toAccountWithdrawn = 0m;
+
             var amount = 200m;
+
+            var fromAccount = AccountGenerator.Generate(balance: fromAccountBalance, withdraw: fromAccountWithdrawn, paidIn: fromAccountPaidIn);
+            var toAccount = AccountGenerator.Generate(balance: toAccountBalance, withdraw: toAccountWithdrawn, paidIn: toAccountPaidIn);
 
             _accountRepository.Setup(x => x.GetAccountById(fromAccount.Id)).Returns(fromAccount);
             _accountRepository.Setup(x => x.GetAccountById(toAccount.Id)).Returns(toAccount);
-            
+
             GetSut().Execute(fromAccount.Id, toAccount.Id, amount);
 
-            _accountRepository.Verify(x => x.Update(fromAccount), Times.Once);
-            _accountRepository.Verify(x => x.Update(toAccount), Times.Once);
+            _accountRepository.Verify(x => x.Update(It.Is<Account>(a => a.Balance == fromAccountBalance - amount && a.Withdrawn == fromAccountWithdrawn + amount)), Times.Once);
+            _accountRepository.Verify(x => x.Update(It.Is<Account>(a => a.Balance == toAccountBalance + amount && a.PaidIn == toAccountPaidIn + amount)), Times.Once);
             _notificationService.Verify(x => x.NotifyFundsLow(It.IsAny<string>()), Times.Never);
             _notificationService.Verify(x => x.NotifyApproachingPayInLimit(It.IsAny<string>()), Times.Never);
         }
@@ -39,17 +49,27 @@ namespace Moneybox.App.Tests
         [Fact]
         public void GivenTransferCauseLowBalance_WhenExecutedIsCalled_ThenNotifyFundsLowIsCalled()
         {
-            var fromAccount = new Account { Id = Guid.NewGuid(), Balance = 300m, PaidIn = 0m, User = new User() { Email = "fake"}};
-            var toAccount = new Account { Id = Guid.NewGuid(), Balance = 500m, PaidIn = 2000m };
+            var fromAccountBalance = 300m;
+            var fromAccountPaidIn = 0m;
+            var fromAccountWithdrawn = 0m;
+
+            var toAccountBalance = 500m;
+            var toAccountPaidIn = 2000m;
+            var toAccountWithdrawn = 0m;
+
             var amount = 100m;
-        
+
+            var fromAccount = AccountGenerator.Generate(balance: fromAccountBalance, withdraw: fromAccountWithdrawn, paidIn: fromAccountPaidIn);
+
+            var toAccount = AccountGenerator.Generate(balance: toAccountBalance, withdraw: toAccountWithdrawn, paidIn: toAccountPaidIn);
+
             _accountRepository.Setup(x => x.GetAccountById(fromAccount.Id)).Returns(fromAccount);
             _accountRepository.Setup(x => x.GetAccountById(toAccount.Id)).Returns(toAccount);
-        
+
             GetSut().Execute(fromAccount.Id, toAccount.Id, amount);
-        
-            _accountRepository.Verify(x => x.Update(fromAccount), Times.Once);
-            _accountRepository.Verify(x => x.Update(toAccount), Times.Once);
+
+            _accountRepository.Verify(x => x.Update(It.Is<Account>(a => a.Balance == fromAccountBalance - amount && a.Withdrawn == fromAccountWithdrawn + amount)), Times.Once);
+            _accountRepository.Verify(x => x.Update(It.Is<Account>(a => a.Balance == toAccountBalance + amount && a.PaidIn == toAccountPaidIn + amount)), Times.Once);
             _notificationService.Verify(x => x.NotifyFundsLow(fromAccount.User.Email), Times.Once);
             _notificationService.Verify(x => x.NotifyApproachingPayInLimit(It.IsAny<string>()), Times.Never);
         }
@@ -57,17 +77,27 @@ namespace Moneybox.App.Tests
         [Fact] 
         public void GivenTransferCausePayLimit_WhenExecutedIsCalled_ThenApproachingPayInLimitNotificationIsCalled()
         {
-            var fromAccount = new Account { Id = Guid.NewGuid(), Balance = 1000m, PaidIn = 0m };
-            var toAccount = new Account { Id = Guid.NewGuid(), Balance = 500m, PaidIn = 3900m, User = new User() {Email = "fake"}};
+            var fromAccountBalance = 1000m;
+            var fromAccountPaidIn = 0m;
+            var fromAccountWithdrawn = 0m;
+
+            var toAccountBalance = 500m;
+            var toAccountPaidIn = 3900m;
+            var toAccountWithdrawn = 0m;
+
             var amount = 100m;
-        
+
+            var fromAccount = AccountGenerator.Generate(balance: fromAccountBalance, withdraw: fromAccountWithdrawn, paidIn: fromAccountPaidIn);
+            var toAccount = AccountGenerator.Generate(balance: toAccountBalance, withdraw: toAccountWithdrawn, paidIn: toAccountPaidIn);
+           
+
             _accountRepository.Setup(x => x.GetAccountById(fromAccount.Id)).Returns(fromAccount);
             _accountRepository.Setup(x => x.GetAccountById(toAccount.Id)).Returns(toAccount);
-        
+
             GetSut().Execute(fromAccount.Id, toAccount.Id, amount);
-        
-            _accountRepository.Verify(x => x.Update(fromAccount), Times.Once);
-            _accountRepository.Verify(x => x.Update(toAccount), Times.Once);
+
+            _accountRepository.Verify(x => x.Update(It.Is<Account>(a => a.Balance == fromAccountBalance - amount && a.Withdrawn == fromAccountWithdrawn + amount)), Times.Once);
+            _accountRepository.Verify(x => x.Update(It.Is<Account>(a => a.Balance == toAccountBalance + amount && a.PaidIn == toAccountPaidIn + amount)), Times.Once);
             _notificationService.Verify(x => x.NotifyFundsLow(It.IsAny<string>()), Times.Never);
             _notificationService.Verify(x => x.NotifyApproachingPayInLimit(toAccount.User.Email), Times.Once);
         }
@@ -75,15 +105,24 @@ namespace Moneybox.App.Tests
         [Fact]
         public void TransferWithPayInLimitExceeded_WhenExecuteIsCalled_ThenExceptionIsThrown()
         {
-            var fromAccount = new Account { Id = Guid.NewGuid(), Balance = 1000m, PaidIn = 0m };
-            var toAccount = new Account { Id = Guid.NewGuid(), Balance = 500m, PaidIn = 4000m };
+            var fromAccountBalance = 1000m;
+            var fromAccountPaidIn = 0m;
+            var fromAccountWithdrawn = 0m;
+
+            var toAccountBalance = 500m;
+            var toAccountPaidIn = 4000m;
+            var toAccountWithdrawn = 0m;
+
             var amount = 100m;
+
+            var fromAccount = AccountGenerator.Generate(balance: fromAccountBalance, withdraw: fromAccountWithdrawn, paidIn: fromAccountPaidIn);
+            var toAccount = AccountGenerator.Generate(balance: toAccountBalance, withdraw: toAccountWithdrawn, paidIn: toAccountPaidIn);
+
             _accountRepository.Setup(x => x.GetAccountById(fromAccount.Id)).Returns(fromAccount);
             _accountRepository.Setup(x => x.GetAccountById(toAccount.Id)).Returns(toAccount);
-            
-        
+
             Should.Throw<InvalidOperationException>(() => GetSut().Execute(fromAccount.Id, toAccount.Id, amount));
-            
+
             _notificationService.Verify(x => x.NotifyFundsLow(It.IsAny<string>()), Times.Never);
             _notificationService.Verify(x => x.NotifyApproachingPayInLimit(It.IsAny<string>()), Times.Never);
         }
@@ -91,15 +130,24 @@ namespace Moneybox.App.Tests
         [Fact]
         public void TransferWithNegativeAmount_WhenExecuteIsCalled_ThenExceptionIsThrown()
         {
-            var fromAccount = new Account { Id = Guid.NewGuid(), Balance = 1000m, PaidIn = 0m };
-            var toAccount = new Account { Id = Guid.NewGuid(), Balance = 500m, PaidIn = 2000m };
+            var fromAccountBalance = 1000m;
+            var fromAccountPaidIn = 0m;
+            var fromAccountWithdrawn = 0m;
+
+            var toAccountBalance = 500m;
+            var toAccountPaidIn = 2000m;
+            var toAccountWithdrawn = 0m;
+
             var amount = -200m;
+
+            var fromAccount = AccountGenerator.Generate(balance: fromAccountBalance, withdraw: fromAccountWithdrawn, paidIn: fromAccountPaidIn);
+            var toAccount = AccountGenerator.Generate(balance: toAccountBalance, withdraw: toAccountWithdrawn, paidIn: toAccountPaidIn);
+
             _accountRepository.Setup(x => x.GetAccountById(fromAccount.Id)).Returns(fromAccount);
             _accountRepository.Setup(x => x.GetAccountById(toAccount.Id)).Returns(toAccount);
-        
-            
+
             Should.Throw<InvalidOperationException>(() => GetSut().Execute(fromAccount.Id, toAccount.Id, amount));
-            
+
             _notificationService.Verify(x => x.NotifyFundsLow(It.IsAny<string>()), Times.Never);
             _notificationService.Verify(x => x.NotifyApproachingPayInLimit(It.IsAny<string>()), Times.Never);
         }

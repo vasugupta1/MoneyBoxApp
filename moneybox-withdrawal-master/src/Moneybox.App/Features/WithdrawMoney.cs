@@ -20,7 +20,7 @@ namespace Moneybox.App.Features
             var from = _accountRepository.GetAccountById(fromAccountId) 
                           ?? throw new ArgumentNullException(nameof(fromAccountId),"from account not found");
             
-            var isLowBalance = from.HandleWithdraw(amount);
+            var isLowBalance = from.ProcessWithdraw(amount);
             if (isLowBalance)
             {
                 _notificationService.NotifyFundsLow(from.User.Email);

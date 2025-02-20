@@ -22,13 +22,13 @@ namespace Moneybox.App.Features
             var to = _accountRepository.GetAccountById(toAccountId) 
                      ?? throw new ArgumentNullException(nameof(toAccountId), "to account not found");
 
-            var isLowBalance = from.HandleWithdraw(amount);
+            var isLowBalance = from.ProcessWithdraw(amount);
             if (isLowBalance)
             {
                 _notificationService.NotifyFundsLow(from.User.Email);
             }
 
-            var approachingPayInLimit = to.HandleDeposit(amount);
+            var approachingPayInLimit = to.ProcessDeposit(amount);
             if (approachingPayInLimit)
             {
                 _notificationService.NotifyApproachingPayInLimit(to.User.Email);

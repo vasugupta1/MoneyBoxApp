@@ -7,15 +7,25 @@ namespace Moneybox.App
         private const decimal PayInLimit = 4000m;
 
         private const decimal NotificationThreshold = 500m;
-        public Guid Id { get; set; }
 
-        public User User { get; set; }
+        public Guid Id { get; }
 
-        public decimal Balance { get; set; }
+        public User User { get; }
 
-        public decimal Withdrawn { get; set; }
+        public decimal Balance { get; private set; }
 
-        public decimal PaidIn { get; set; }
+        public decimal Withdrawn { get; private set; }
+
+        public decimal PaidIn { get; private set; }
+        
+        public Account(Guid id, User user, decimal balance, decimal withdrawn, decimal paidIn)
+        {
+            Id = id;
+            User = user ?? throw new ArgumentNullException(nameof(user));
+            Balance = balance;
+            Withdrawn = withdrawn;
+            PaidIn = paidIn;
+        }
         
         /// <summary>
         /// This method is responsible for updating balances and withdrawn based on amount
@@ -23,7 +33,7 @@ namespace Moneybox.App
         /// <param name="amount"></param>
         /// <returns>boolean flag which indicates if notification for low funds should be made</returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public bool HandleWithdraw(decimal amount)
+        public bool ProcessWithdraw(decimal amount)
         {
             if (amount <= 0)
             {
@@ -46,7 +56,7 @@ namespace Moneybox.App
         /// <param name="amount"></param>
         /// <returns>boolean flag which indicates if payin limit is being reached</returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public bool HandleDeposit(decimal amount)
+        public bool ProcessDeposit(decimal amount)
         {
             if (amount <= 0)
             {

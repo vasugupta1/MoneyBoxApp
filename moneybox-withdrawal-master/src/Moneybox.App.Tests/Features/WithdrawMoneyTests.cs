@@ -1,6 +1,7 @@
 using Moneybox.App.DataAccess;
 using Moneybox.App.Domain.Services;
 using Moneybox.App.Features;
+using Moneybox.App.Tests.Generator;
 using Moq;
 using Xunit;
 
@@ -20,26 +21,34 @@ public class WithdrawMoneyTests
     [Fact]
     public void GivenValidAccountId_WhenExecuteIsCalled_ThenAccountIsUpdated()
     {
+        var initialBalance = 1000m;
         var withdrawAmount = 10m;
-        var account = new Account { Id = Guid.NewGuid(), Balance = 1000m, PaidIn = 0m, Withdrawn = 0};
+        var paidIn = 0m;
+        var withdrawn = 0m;
+        var account = AccountGenerator.Generate(balance: initialBalance, withdraw: withdrawn, paidIn: paidIn);
         _accountRepository.Setup(x => x.GetAccountById(It.IsAny<Guid>())).Returns(account);
         
         GetSut().Execute(account.Id, withdrawAmount);
         
-        _accountRepository.Verify(x => x.Update(It.Is<Account>(a => a.Balance == 990m && a.Withdrawn == withdrawAmount)), Times.Once);
+        _accountRepository.Verify(x => x.Update(It.Is<Account>(a => a.Balance == initialBalance - withdrawAmount && a.Withdrawn == withdrawAmount)), Times.Once);
         _notificationService.Verify(x => x.NotifyFundsLow(It.IsAny<string>()), Times.Never);
     }
 
     [Fact]
     public void GivenAmountCausesLowBalance_WhenExecuteIsCalled_ThenNotifyFundLowIsCalled()
     {
+        var initialBalance = 500m;
         var withdrawAmount = 100m;
-        var account = new Account { Id = Guid.NewGuid(), Balance = 500m, PaidIn = 0m, Withdrawn = 0m, User = new User() { Email = "fake"}};
+        var paidIn = 0m;
+        var withdrawn = 0m;
+
+        var account = AccountGenerator.Generate(balance: initialBalance, withdraw: withdrawn, paidIn: paidIn);
+
         _accountRepository.Setup(x => x.GetAccountById(It.IsAny<Guid>())).Returns(account);
-        
+
         GetSut().Execute(account.Id, withdrawAmount);
-        
-        _accountRepository.Verify(x => x.Update(It.Is<Account>(a => a.Balance == 400m && a.Withdrawn == withdrawAmount)), Times.Once);
+
+        _accountRepository.Verify(x => x.Update(It.Is<Account>(a => a.Balance == initialBalance - withdrawAmount && a.Withdrawn == withdrawAmount)), Times.Once);
         _notificationService.Verify(x => x.NotifyFundsLow(It.IsAny<string>()), Times.Once);
     }
     

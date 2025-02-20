@@ -1,3 +1,4 @@
+using Moneybox.App.Tests.Generator;
 using Shouldly;
 using Xunit;
 
@@ -8,9 +9,9 @@ public class AccountTests
     [Fact]
     public void HandleWithdraw_SuccessfulWithdrawal_ReturnsFalseWhenBalanceAboveThreshold()
     {
-        var account = new Account { Balance = 1000m };
+        var account = AccountGenerator.Generate(balance: 1000m);
         
-        var lowFunds = account.HandleWithdraw(200m);
+        var lowFunds = account.ProcessWithdraw(200m);
 
         account.Balance.ShouldBe(800m);
         account.Withdrawn.ShouldBe(200m);
@@ -20,9 +21,9 @@ public class AccountTests
     [Fact]
     public void HandleWithdraw_LowBalance_ReturnsTrueWhenBalanceBelowThreshold()
     {
-        var account = new Account { Balance = 600m };
+        var account = AccountGenerator.Generate(balance: 600m);
         
-        var lowFunds = account.HandleWithdraw(200m);
+        var lowFunds = account.ProcessWithdraw(200m);
         
         account.Balance.ShouldBe(400m);
         account.Withdrawn.ShouldBe(200m);
@@ -32,26 +33,26 @@ public class AccountTests
     [Fact]
     public void HandleWithdraw_InsufficientFunds_ThrowsException()
     {
-        var account = new Account { Balance = 100m };
+        var account = AccountGenerator.Generate(balance: 100m);
         
-        Should.Throw<InvalidOperationException>(() => account.HandleWithdraw(200m));
+        Should.Throw<InvalidOperationException>(() => account.ProcessWithdraw(200m));
     }
     
     [Fact]
     public void HandleWithdraw_NegativeOrZeroAmount_ThrowsException()
     {
-        var account = new Account { Balance = 1000m };
+        var account = AccountGenerator.Generate(balance: 1000m);
         
-        Should.Throw<InvalidOperationException>(() => account.HandleWithdraw(0m));
-        Should.Throw<InvalidOperationException>(() => account.HandleWithdraw(-50m));
+        Should.Throw<InvalidOperationException>(() => account.ProcessWithdraw(0m));
+        Should.Throw<InvalidOperationException>(() => account.ProcessWithdraw(-50m));
     }
     
     [Fact]
     public void HandleDeposit_SuccessfulDeposit_ReturnsFalseWhenPayInLimitNotReached()
     {
-        var account = new Account { Balance = 1000m, PaidIn = 2000m };
+        var account = AccountGenerator.Generate(balance: 1000m, paidIn: 2000m);
         
-        var result = account.HandleDeposit(1000m);
+        var result = account.ProcessDeposit(1000m);
         
         account.Balance.ShouldBe(2000m);
         account.PaidIn.ShouldBe(3000m);
@@ -61,9 +62,9 @@ public class AccountTests
     [Fact]
     public void HandleDeposit_ApproachingPayInLimit_ReturnsTrueWhenThresholdExceeded()
     {
-        var account = new Account { Balance = 1000m, PaidIn = 3600m };
+        var account = AccountGenerator.Generate(balance: 1000m, paidIn: 3600m);
         
-        var result = account.HandleDeposit(300m);
+        var result = account.ProcessDeposit(300m);
         
         account.Balance.ShouldBe(1300m);
         account.PaidIn.ShouldBe(3900m);
@@ -73,17 +74,17 @@ public class AccountTests
     [Fact]
     public void HandleDeposit_PayInLimitExceeded_ThrowsException()
     {
-        var account = new Account { PaidIn = 3800m };
+        var account = AccountGenerator.Generate(balance: 1000m, paidIn: 3800m);
         
-        Should.Throw<InvalidOperationException>(() => account.HandleDeposit(300m));
+        Should.Throw<InvalidOperationException>(() => account.ProcessDeposit(300m));
     }
 
     [Fact]
     public void HandleDeposit_NegativeOrZeroAmount_ThrowsException()
     {
-        var account = new Account { Balance = 1000m };
+        var account = AccountGenerator.Generate(balance: 1000m);
         
-        Should.Throw<InvalidOperationException>(() => account.HandleDeposit(0m));
-        Should.Throw<InvalidOperationException>(() => account.HandleDeposit(-50m));
+        Should.Throw<InvalidOperationException>(() => account.ProcessDeposit(0m));
+        Should.Throw<InvalidOperationException>(() => account.ProcessDeposit(-50m));
     }
 }
