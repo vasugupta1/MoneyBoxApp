@@ -1,8 +1,20 @@
 # Moneybox Money Withdrawal
 
+## Description 
+My approach involved shifting some of the account domain-related logic into the Account object. The Account object now restricts external calls to directly update the Balance, Withdrawn, and PaidIn values, as these updates should be handled internally by the object's logic. Additionally, PayInLimit and NotificationThreshold have been made private to prevent external modifications, ensuring these constants remain consistent across all business areas.
+
+Unit tests have been implemented to verify the correctness of the Account object's logic. These tests also ensure that the TransferMoney and WithdrawMoney operations perform as expected, updating Balance, Withdrawn, and PaidIn values accurately.
+
+## Future Improvements
+1. Create e2e project to verify classlib will behave correctly, this will be done by creating interface for both TransferMoney, Withdraw
+2. Add Service collection extension methods so that these TransferMoney, Withdraw Money class can be regirestred in IOC easily.
+3. MS logging will be added to this classlib in order to produce logs for unexpected events.
+4. Metrics will be added to make sure visibility is present for when TransferMoney and WithdrawMoney are executed.
+
 ## Packages Used
 1. Shoudly
 2. Moq
+3. Autofixture
 
 ## Build 
 To build this project please run "dotnet clean && dotnet restore && dotnet build"
